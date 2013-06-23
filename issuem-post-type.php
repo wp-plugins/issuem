@@ -61,9 +61,42 @@ if ( !function_exists( 'create_article_post_type' ) ) {
 	
 		register_post_type( 'article', $args );
 		
+		if ( 'true' === get_option( 'issuem_flush_rewrite_rules' ) ) {
+			
+			// ATTENTION: This is *only* done during plugin activation hook in this example!
+			// You should *NEVER EVER* do this on every page load!!
+			flush_rewrite_rules();
+			delete_option( 'issuem_flush_rewrite_rules' );
+			
+		}
+		
 	}
 	add_action( 'init', 'create_article_post_type' );
 
+}
+
+if ( !function_exists( 'issuem_article_add_post_thumbnails' ) ) {
+	
+	function issuem_article_add_post_thumbnails() {
+		
+		$supported_post_types = get_theme_support( 'post-thumbnails' );
+		
+		if( false === $supported_post_types )  {
+			
+			$post_types = array( 'article' );
+			add_theme_support( 'post-thumbnails', $post_types ); 
+			           
+		} else if ( is_array( $supported_post_types ) ) {
+			
+			$post_types = $supported_post_types[0];
+			$post_types[] = 'article';
+			add_theme_support( 'post-thumbnails', $post_types ); 
+
+		} 
+	
+	}
+	add_action( 'after_setup_theme', 'issuem_article_add_post_thumbnails', 99 );
+	
 }
 
 if ( !function_exists( 'add_issuem_articles_metaboxes' ) ) {

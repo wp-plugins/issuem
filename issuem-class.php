@@ -61,10 +61,8 @@ if ( ! class_exists( 'IssueM' ) ) {
 		 *
 		 */
 		function activation() {
-					
-			// ATTENTION: This is *only* done during plugin activation hook in this example!
-			// You should *NEVER EVER* do this on every page load!!
-			flush_rewrite_rules();
+			
+			 add_option( 'issuem_flush_rewrite_rules', 'true' );
 			
 		}
 	
@@ -79,6 +77,8 @@ if ( ! class_exists( 'IssueM' ) ) {
 			// Clear the IssueM RSS reader if there is a schedule
 			if ( wp_next_scheduled( 'issuem_dot_com_rss_feed_check' ) )
 				wp_clear_scheduled_hook( 'issuem_dot_com_rss_feed_check' );
+				
+			 delete_option( 'issuem_flush_rewrite_rules' );
 			
 		}
 			
@@ -284,6 +284,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 			
 			$defaults = array( 
 								'page_for_articles'		=> 0,
+								'page_for_archives'		=> 0,
 								'pdf_title'				=> __( 'Download PDF', 'issuem' ),
 								'pdf_only_title'		=> __( 'PDF Only', 'issuem' ),
 								'pdf_open_target'		=> '_blank',
@@ -354,6 +355,9 @@ if ( ! class_exists( 'IssueM' ) ) {
 				
 				if ( isset( $_REQUEST['page_for_articles'] ) )
 					$settings['page_for_articles'] = $_REQUEST['page_for_articles'];
+				
+				if ( isset( $_REQUEST['page_for_archives'] ) )
+					$settings['page_for_archives'] = $_REQUEST['page_for_archives'];
 					
 				if ( isset( $_REQUEST['css_style'] ) )
 					$settings['css_style'] = $_REQUEST['css_style'];
@@ -476,6 +480,10 @@ if ( ! class_exists( 'IssueM' ) ) {
                         	<tr>
                                 <th rowspan="1"> <?php _e( 'Page for Articles', 'issuem' ); ?></th>
                                 <td><?php echo wp_dropdown_pages( array( 'name' => 'page_for_articles', 'echo' => 0, 'show_option_none' => __( '&mdash; Select &mdash;' ), 'option_none_value' => '0', 'selected' => $settings['page_for_articles'] ) ); ?></td>
+                            </tr>
+                        	<tr>
+                                <th rowspan="1"> <?php _e( 'Page for Issue Archives', 'issuem' ); ?></th>
+                                <td><?php echo wp_dropdown_pages( array( 'name' => 'page_for_archives', 'echo' => 0, 'show_option_none' => __( '&mdash; Select &mdash;' ), 'option_none_value' => '0', 'selected' => $settings['page_for_archives'] ) ); ?></td>
                             </tr>
                         
                         	<?php if ( apply_filters( 'enqueue_issuem_styles', true ) ) { ?>
