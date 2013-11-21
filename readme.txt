@@ -2,7 +2,7 @@
 Contributors: layotte
 Tags: magazine manager, issue manager, news manager, news management, periodical manager, periodicial management, issue management, magazine management
 Requires at least: 3.3
-Tested up to: 3.6
+Tested up to: 3.7
 Stable tag: 1.2.3
 
 Turn WordPress into an issue based publisher for your news or magazine site.
