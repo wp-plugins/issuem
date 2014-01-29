@@ -81,6 +81,8 @@ if ( !function_exists( 'do_issuem_articles' ) ) {
 			$cat_type = 'issuem_issue_categories';
 			
 		if ( 'true' === $use_category_order && 'issuem_issue_categories' === $cat_type ) {
+
+			$count = 0;
 			
 			if ( 'all' === $article_category ) {
 			
@@ -93,7 +95,7 @@ if ( !function_exists( 'do_issuem_articles' ) ) {
 					if ( !empty( $issue_cat_meta['category_order'] ) )
 						$terms[ $issue_cat_meta['category_order'] ] = $term->slug;
 					else
-						$terms[ $issue_cat_meta['category_order'] ] = $term->slug;
+						$terms[ '-' . ++$count ] = $term->slug;
 						
 				}
 				
@@ -108,13 +110,14 @@ if ( !function_exists( 'do_issuem_articles' ) ) {
 					if ( !empty( $issue_cat_meta['category_order'] ) )
 						$terms[ $issue_cat_meta['category_order'] ] = $term->slug;
 					else
-						$terms[ $issue_cat_meta['category_order'] ] = $term->slug;
+						$terms[ '-' . ++$count ] = $term->slug;
 						
 				}
 			
 			}
 			
 			krsort( $terms );
+			$articles = array();
 			
 			foreach( $terms as $term ) {
 			
@@ -134,6 +137,23 @@ if ( !function_exists( 'do_issuem_articles' ) ) {
 				
 			}
 		
+			//And we want all articles not in a category
+			$category = array(
+				'taxonomy' 	=> $cat_type,
+				'field'		=> 'slug',
+				'terms'		=> $terms, 
+				'operator'	=> 'NOT IN',
+			);
+
+			$args['tax_query'] = array(
+                               'relation'      => 'AND',
+                                $issuem_issue,
+                                $category
+                        );
+
+                        $articles = array_merge( $articles, get_posts( $args ) );
+
+			//Now we need to get rid of duplicates (assuming an article is in more than one category
 			if ( !empty( $articles ) ) {
 				
 				foreach( $articles as $article ) {
@@ -328,11 +348,14 @@ if ( !function_exists( 'do_issuem_archives' ) ) {
 			else
 				$article_page = get_page_link( $issuem_settings['page_for_articles'] );
 		
-			$issue_url = add_query_arg( 'issue', $issue_array[0]->slug, $article_page );
+			$issue_url = get_term_link( $issue_array[0], 'issuem_issue' );
+            if ( $issuem_settings['use_issue_tax_links'] == '' or is_wp_error( $issue_url ) ) {
+                $issue_url = add_query_arg( 'issue', $issue_array[0]->slug, $article_page );
+            }
 				
 			if ( !empty( $issue_array[1]['pdf_version'] ) || !empty( $issue_meta['external_pdf_link'] ) ) {
 				
-				$pdf_url = empty( $issue_meta['external_pdf_link'] ) ? wp_get_attachment_url( $issue_array[1]['pdf_version'] ) : $issue_meta['external_pdf_link'];
+				$pdf_url = empty( $issue_meta['external_pdf_link'] ) ? apply_filters( 'issuem_pdf_attachment_url', wp_get_attachment_url( $issue_array[1]['pdf_version'] ), $issue_array[1]['pdf_version'] ) : $issue_meta['external_pdf_link'];
 				
 				$pdf_line = '<a href="' . $pdf_url . '" target="' . $issuem_settings['pdf_open_target'] . '">';
 				
