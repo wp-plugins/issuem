@@ -282,12 +282,17 @@ if ( !function_exists( 'do_issuem_archives' ) ) {
 							'order'			=> 'DESC',
 							'limit'			=> 0,
 							'pdf_title'		=> $issuem_settings['pdf_title'],
-							'default_image'	=> $issuem_settings['default_issue_image']
+							'default_image'	=> $issuem_settings['default_issue_image'],
+							'args'			=> array( 'hide_empty' => 0 ),
 						);
 		extract( shortcode_atts( $defaults, $atts ) );
 		
-		$args = array( 'hide_empty' => 0 );
+		if ( is_string( $args ) ) {
+			$args = str_replace( '&amp;', '&', $args );
+			$args = str_replace( '&#038;', '&', $args );
+		}
 		
+		$args = apply_filters( 'do_issuem_archives_get_terms_args', $args );
 		$issuem_issues = get_terms( 'issuem_issue', $args );
 		$archives = array();
 		$archives_no_issue_order = array();
@@ -330,9 +335,16 @@ if ( !function_exists( 'do_issuem_archives' ) ) {
 		else
 			ksort( $archives );
 			
+		$archive_count = count( $archives ) - 1; //we want zero based
+		
+		$paged = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
+		if ( !empty( $limit ) ) {
+			$offset = ( $paged - 1 ) * $limit;
+			$archives = array_slice( $archives, $offset, $limit );
+		}
+			
 		$results = '<div class="issuem_archives_shortcode">';
 		
-		$count = 0;
 		foreach ( $archives as $archive => $issue_array ) {
 		
 			$issue_meta = get_option( 'issuem_issue_' . $issue_array[0]->term_id . '_meta' );
@@ -391,11 +403,30 @@ if ( !function_exists( 'do_issuem_archives' ) ) {
 			$results .= '<br />' . $pdf_line;
 		
 			$results .= '</div>';
+						
+		}
+		
+		if ( !empty( $limit ) ) {
+		
+			$url = remove_query_arg( array( 'page', 'paged' ) );
+		
+			$results .= '<div class="next_previous_archive_pagination">';
+		
+			if ( 0 === $offset && $limit < $archive_count ) {
+				//Previous link only
+				$results .= '<div class="alignleft"><a href="' . add_query_arg( 'paged', $paged + 1, $url ) . '">' . __( 'Previous Archives', 'issuem' ) . '</a></div>';
+				
+			} else if ( $offset >= $archive_count ) {
+				//Next link only
+				$results .= '<div class="alignright"><a href="' . add_query_arg( 'paged', $paged - 1, $url ) . '">' . __( 'Next Archives', 'issuem' ) . '</a></div>';
+			} else {
+				//Next and Previous Links
+				$results .= '<div class="alignleft"><a href="' . add_query_arg( 'paged', $paged + 1, $url ) . '">' . __( 'Previous Archives', 'issuem' ) . '</a></div>';
+				$results .= '<div class="alignright"><a href="' . add_query_arg( 'paged', $paged - 1, $url ) . '">' . __( 'Next Archives', 'issuem' ) . '</a></div>';
+			}
 			
-			$count++;
-			if ( 0 != $limit && $count >= $limit )
-				break;
 			
+			$results .= '</div>';
 		}
 		
 		if ( get_option( 'issuem_api_error_received' ) )
@@ -614,7 +645,7 @@ if ( !function_exists( 'do_issuem_featured_thumbs' ) ) {
 		
 		if ( $featured_articles ) : 
 			
-			$results .= '<div id="issuem-featured-article-thumbs-imageholder">';
+			$results .= '<div id="issuem-featured-article-thumbs-wrap">';
 		
 			$count = 1;
 			/* start the loop */
@@ -626,31 +657,35 @@ if ( !function_exists( 'do_issuem_featured_thumbs' ) ) {
 					$image = apply_filters( 'issuem_featured_thumbs_article_image', $image, $article );
 					
 					$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_div', '', $article );
-					$results .= '<div class="issuem-featured-article-thumbs-image" class="floatleft" style="width: ' . $image[1] .'px">';
+					$results .= '<div class="issuem-featured-article-thumb">';
 					$results .= apply_filters( 'issuem_featured_thumbs_start_thumbnail_div', '', $article );
 					
 					$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_image', '', $article );
-					$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_image', '<a href="' . get_permalink( $article->ID ) . '"><img src="' . $image[0] . '" width="' . $image[1] . '" height="' . $image[2] . '" alt="' . get_post_meta( $article->ID, '_teaser_text', true ) . '" /></a><br />', $article );
+					$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_image', '<a class="issuem-featured-thumbs-img" href="' . get_permalink( $article->ID ) . '"><img src="' . $image[0] . '" width="' . $image[1] . '" height="' . $image[2] . '" alt="' . get_post_meta( $article->ID, '_teaser_text', true ) . '" /></a>', $article );
 					$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_image', '', $article );
 					
-					$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_category', '', $article );
-					$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_category', '<p class="issuem_article_category">' . get_the_terms( $post->ID, $cats ) . '</p>', $article );
-					$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_category', '', $article );
+					
+					if ( $cats ) {
+						$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_category', '', $article );
+						$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_category', '<p class="issuem-article-category">' . get_the_terms( $post->ID, $cats ) . '</p>', $article );
+						$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_category', '', $article );
+					}
+					
 
 					$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_title', '', $article );
-					$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_title', '<h3 class="featured-thumb-title"><a href="' . get_permalink( $article->ID ) . '">' . get_the_title( $article->ID ) . '</a></h3>', $article );
+					$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_title', '<h3 class="issuem-featured-thumb-title"><a href="' . get_permalink( $article->ID ) . '">' . get_the_title( $article->ID ) . '</a></h3>', $article );
 					$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_title', '', $article );
 
 					$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_content', '', $article );
 					switch ( $content_type ) {
 								
 							case 'excerpt':
-								$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_content', '<span class="featured-thumb-content">' . get_the_excerpt() . '</span>', $article );	
+								$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_content', '<p class="issuem-featured-thumb-content">' . get_the_excerpt() . '</p>', $article );	
 								break;
 								
 							case 'teaser':	
 							default:					
-								$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_content', '<span class="featured-thumb-content">' . get_post_meta( $article->ID, '_teaser_text', true ) . '</span>', $article );
+								$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_content', '<p class="featured-thumb-content">' . get_post_meta( $article->ID, '_teaser_text', true ) . '</p>', $article );
 								break;
 								
 					}
@@ -661,7 +696,7 @@ if ( !function_exists( 'do_issuem_featured_thumbs' ) ) {
 						
 						$author_name = get_issuem_author_name( $article );
 						
-						$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_byline', '<span class="featured-thumb-byline">' . sprintf( __( 'By %s', 'issuem' ), apply_filters( 'issuem_author_name', $author_name, $article->ID ) ) . '</span>', $article );
+						$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_byline', '<p class="featured-thumb-byline">' . sprintf( __( 'By %s', 'issuem' ), apply_filters( 'issuem_author_name', $author_name, $article->ID ) ) . '</p>', $article );
 						
 					}
 					$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_byline', '', $article );
