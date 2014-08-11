@@ -1,9 +1,9 @@
 === IssueM ===
-Contributors: layotte
+Contributors: layotte, peterericson
 Tags: magazine manager, issue manager, news manager, news management, periodical manager, periodicial management, issue management, magazine management
 Requires at least: 3.3
 Tested up to: 3.9
-Stable tag: 1.2.8
+Stable tag: 1.2.10
 
 The world first and easiest to use Issue Managing plugin for WordPress.
 
@@ -13,7 +13,7 @@ Many sites use WordPress for as a magazine or news manager. There are dozens of 
 
 The IssueM plugin makes a distinction between WordPress' blogging platform and creates a new level of Articles which are associated with Issues. Issues can be drafted until they are ready for release, yet still visible on the site for Administrators, Editors, Authors, and Contributors. IssueM gives you hassle-free control over your issue based sites. IssueM also has a simple to use WordPress shortcode system, making it simple to integrate into your existing theme. Now you have the freedom to pick a theme that fits your site's needs without compromising on the flexibility of the functionality of your site.
 
-You can follow this plugins development on [GitHub](https://github.com/IssueM/issuem)
+You can follow this plugins development on [GitHub](https://github.com/zeen101/issuem)
 
 Premium Add-ons Available:
 Leaky Paywall w/ Stripe and PayPal Integration - Charge your customers to view your blog posts and/or IssueM articles. Find out more at http://LeakyPW.com
@@ -43,6 +43,29 @@ You must have:
 * IssueM is GPL
 
 == Changelog ==
+= 1.2.10 =
+* Fixed readme
+* Fixed messed up constant variable name
+
+= 1.2.9 =
+* Updating IssueM references to point to zeen101
+* Update show_thumbnail_byline variable
+* Add title field to IssueM Active Issue widget
+* Change object name to article instead of post for the featured thumbnail category list arguements
+* Add display thumbnail byline to issuem settings page
+* Filter the_content plus... Related to commit 854d12b79c2b7701ad1712fff6f387246ee5a218
+* Applies 'the_content' filter to article content
+* Changing merged pull request (minor update)
+* Update issuem-functions.php
+* Customizing Flexslider to deal with conflicting themes/plugins that enqueu their own version
+* Fixed activation hook function call
+* Move inline css to admin css file'
+* Replace file uploader with wp media uploader for default issue image
+* Remove toggle arrows from settings boxes
+* Add settings sidebar for additional content
+* Update layout of settings page
+* Fixing responsive issue with captions in flexslider
+
 = 1.2.8 =
 * Fixing featured thumbnail shortcode to show categories properly 
 * Adding filter and CSS class for no articles found message on articles shortcode

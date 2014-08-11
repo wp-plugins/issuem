@@ -143,7 +143,7 @@ if ( !function_exists( 'get_issuem_issue_slug' ) ) {
 			
 		}
 		
-		return $issue->slug;
+		return ( ( is_object( $issue ) && !empty( $issue->slug ) ) ? $issue->slug : '' );
 		
 	}
 
@@ -371,6 +371,8 @@ if ( !function_exists( 'issuem_replacements_args' ) ) {
 		if ( preg_match( '/%CONTENT%/i', $string, $matches ) ) {
 		
 			$content = get_the_content();
+			$content = apply_filters( 'the_content', $content );
+    			$content = str_replace( ']]>', ']]&gt;', $content );
 			$string = preg_replace( '/%CONTENT%/i', $content, $string );	
 					
 		}

@@ -509,7 +509,7 @@ if ( !function_exists( 'do_issuem_featured_rotator' ) ) {
 		if ( $featured_articles ) :
 			
 			$results .= '<div id="issuem-featured-article-slideshowholder">'; 
-			$results .= '<div class="flexslider">';
+			$results .= '<div class="issuem-flexslider">';
 			$results .= '<ul class="slides">';
 		
 			/* start the loop */
@@ -545,7 +545,7 @@ if ( !function_exists( 'do_issuem_featured_rotator' ) ) {
 					
 					$results .= '<li>';
 					$results .= '<a href="' . get_permalink( $article->ID ) . '"><img src="' . $image[0] .'" alt="' .strip_tags( $caption ) . '" /></a>';
-					$results .= '<div class="flex-caption" style="width: ' . $issuem_settings['featured_image_width'] . 'px;">' . $caption . '</div>';
+					$results .= '<div class="flex-caption"><div class="flex-caption-content">' . $caption . '</div></div>';
 					$results .= '</li>';
 					
 				}
@@ -558,7 +558,7 @@ if ( !function_exists( 'do_issuem_featured_rotator' ) ) {
 					
 			$results .= "<script type='text/javascript'>
 						jQuery( window ).load( function(){
-						  jQuery( '.flexslider' ).flexslider({
+						  jQuery( '.issuem-flexslider' ).issuem_flexslider({
 							animation: 'slide',
 							start: function(slider){
 							  jQuery('body').removeClass('loading');
@@ -668,7 +668,7 @@ if ( !function_exists( 'do_issuem_featured_thumbs' ) ) {
 					
 					if ( 'true' === $show_cats ) {
 						$results .= apply_filters( 'issuem_featured_thumbs_before_thumbnail_category', '', $article );
-						$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_category', '<p class="issuem-article-category">' . get_the_term_list( $post->ID, $cat_type ) . '</p>', $article );
+						$results .= apply_filters( 'issuem_featured_thumbs_thumbnail_category', '<p class="issuem-article-category">' . get_the_term_list( $article->ID, $cat_type ) . '</p>', $article );
 						$results .= apply_filters( 'issuem_featured_thumbs_after_thumbnail_category', '', $article );
 					}
 					
