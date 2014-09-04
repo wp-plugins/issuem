@@ -2,7 +2,7 @@
 Contributors: layotte
 Tags: magazine manager, issue manager, news manager, news management, periodical manager, periodicial management, issue management, magazine management
 Requires at least: 3.3
-Tested up to: 3.9
+Tested up to: 4.0 
 Stable tag: 1.2.9
 
 The world first and easiest to use Issue Managing plugin for WordPress.
