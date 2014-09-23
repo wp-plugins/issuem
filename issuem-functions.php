@@ -217,7 +217,7 @@ if ( !function_exists( 'set_issuem_cookie' ) ) {
 			
 		} else {
 		
-			global $wp_query;
+			global $post;
 			
 			$issuem_settings = get_issuem_settings();
 				
@@ -226,11 +226,24 @@ if ( !function_exists( 'set_issuem_cookie' ) ) {
 				$_COOKIE['issuem_issue'] = get_issuem_issue_slug();
 				setcookie( 'issuem_issue', $_COOKIE['issuem_issue'], time() + 3600, '/' );
 			
-			} else if ( !empty( $wp_query->post_type ) && 'article' != $wp_query->post_type ) {
+			} else if ( !empty( $post->post_type ) && 'article' != $post->post_type ) {
 			
 				unset( $_COOKIE['issuem_issue'] );
 				setcookie( 'issuem_issue', '', 1, '/' );
 				
+			} else if ( is_single() && !empty( $post->post_type ) && 'article' == $post->post_type ) {
+			
+				$terms = wp_get_post_terms( $post->ID, 'issuem_issue' );
+				if ( !empty( $terms ) ) {
+					$_COOKIE['issuem_issue'] = $terms[0]->slug;
+					setcookie( 'issuem_issue', $_COOKIE['issuem_issue'], time() + 3600, '/' );
+				}		
+				
+			} else if ( taxonomy_exists( 'issuem_issue' ) ) {
+				
+				$_COOKIE['issuem_issue'] = get_query_var( 'issuem_issue' );
+				setcookie( 'issuem_issue', $_COOKIE['issuem_issue'], time() + 3600, '/' );
+
 			}
 			
 		}
@@ -398,6 +411,13 @@ if ( !function_exists( 'issuem_replacements_args' ) ) {
 			$byline = sprintf( __( 'By %s', 'issuem' ), apply_filters( 'issuem_author_name', $author_name, $post->ID ) );
 				
 			$string = preg_replace( '/%BYLINE%/i', $byline, $string );	
+					
+		}
+
+		if ( preg_match( '/%DATE%/i', $string, $matches ) ) {
+
+			$post_date = get_the_date( '', $post->ID );
+			$string = preg_replace( '/%DATE%/i', $post_date, $string );	
 					
 		}
 		
@@ -745,6 +765,35 @@ if ( !function_exists( 'walk_issuem_category_dropdown_tree' ) ) {
 			$walker = $args[2]['walker'];
 	
 		return call_user_func_array(array( &$walker, 'walk' ), $args );
+	}
+
+}
+
+if ( !function_exists( 'get_issuem_article_excerpt' ) ) { 
+	
+	/**
+	 * Get article excerpt by id, for use outside of the loop
+	 *
+	 * @since 1.2.12
+	 *
+	 * @param int $id Article ID 
+	 * @return excerpt for the article
+	 */
+	function get_issuem_article_excerpt( $id = false ) {
+	
+		if ( !$id ) {
+				
+			return;
+			
+		} else {
+
+			$the_article = get_post($id);
+			$the_excerpt = $the_article->post_excerpt;
+
+			return $the_excerpt;
+			
+		}
+		
 	}
 
 }
