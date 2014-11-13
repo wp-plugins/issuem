@@ -1,15 +1,15 @@
 === IssueM ===
-Contributors: layotte, peterericson
+Contributors: layotte, pericson, endocreative
 Tags: magazine manager, issue manager, news manager, news management, periodical manager, periodicial management, issue management, magazine management
 Requires at least: 3.3
 Tested up to: 4.0 
-Stable tag: 1.2.12
+Stable tag: 2.0.0
 
 The world first and easiest to use Issue Managing plugin for WordPress.
 
 == Description ==
 
-Many sites use WordPress for as a magazine or news manager. There are dozens of themes out there geared to making WordPress "look" like a issue based site. But [IssueM](http://issuem.com/) is the first plugin that truly takes the Issue based system to the next level in WordPress.
+Many sites use WordPress for as a magazine or news manager. There are dozens of themes out there geared to making WordPress "look" like a issue based site. But IssueM by [zeen101](http://zeen101.com/) is the first plugin that truly takes the Issue based system to the next level in WordPress.
 
 The IssueM plugin makes a distinction between WordPress' blogging platform and creates a new level of Articles which are associated with Issues. Issues can be drafted until they are ready for release, yet still visible on the site for Administrators, Editors, Authors, and Contributors. IssueM gives you hassle-free control over your issue based sites. IssueM also has a simple to use WordPress shortcode system, making it simple to integrate into your existing theme. Now you have the freedom to pick a theme that fits your site's needs without compromising on the flexibility of the functionality of your site.
 
@@ -20,9 +20,9 @@ Leaky Paywall w/ Stripe and PayPal Integration - Charge your customers to view y
 Post Migration Tool - Convert your old blog posts into Issue based Articles!
 Advanced Search Tool - An advanced search system that lets your site visits search terms in specific articles in specific categories, tags, and/or issues!
 
-Also, be sure to check out our [IssueM Magazine theme](https://issuem.com/downloads/issuem-magazine-theme/) to help get you started today on your new online magazine!
+Also, be sure to check out our [IssueM Magazine theme](https://zeen101.com/downloads/issuem-magazine-theme/) to help get you started today on your new online magazine!
 
-For support, demos and premium add-ons, please visit [IssueM.com](http://issuem.com/).
+For support, demos and premium add-ons, please visit [zeen101.com](http://zeen101.com/).
 
 == Installation ==
 
@@ -43,6 +43,24 @@ You must have:
 * IssueM is GPL
 
 == Changelog ==
+= 2.0.0 =
+* Prepping for IssueM Pro integration!
+* Changing feed templates to order posts by menu_order over post_date
+* Add default settings for rotator options
+* Updating issuem.com links to go to zeen101.com
+* Update help page layout and improve documentation
+* Add RSS feed to zeen101 to IssueM settings page sidebar
+* Update layout of settings page
+* Add rate issuem widget to issuem settings page
+* Clarify description for Article Format meta box
+* Update list of wp contributors
+* Add second param to get_issuem_author_name to not output name as a link
+* Use the number input for font size inputs
+* Update settings notification so it actually displays
+* Add tabs to IssueM settings page
+* Change issue_url output to only the term slug if use tax links is checked in settings
+* Redux of feature image rotator options
+
 = 1.2.12 =
 * Setting issuem_issue cookie properly for article views
 * Added issuem_issue setting for taxinomical links

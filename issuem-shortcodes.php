@@ -361,9 +361,9 @@ if ( !function_exists( 'do_issuem_archives' ) ) {
 				$article_page = get_page_link( $issuem_settings['page_for_articles'] );
 		
 			$issue_url = get_term_link( $issue_array[0], 'issuem_issue' );
-            if ( $issuem_settings['use_issue_tax_links'] == '' or is_wp_error( $issue_url ) ) {
-                $issue_url = add_query_arg( 'issue', $issue_array[0]->slug, $article_page );
-            }
+		    if ( !empty( $issuem_settings['use_issue_tax_links'] ) || is_wp_error( $issue_url ) ) {
+		        $issue_url = add_query_arg( 'issue', $issue_array[0]->slug, $article_page );
+		    }
 				
 			if ( !empty( $issue_array[1]['pdf_version'] ) || !empty( $issue_meta['external_pdf_link'] ) ) {
 				
@@ -531,7 +531,7 @@ if ( !function_exists( 'do_issuem_featured_rotator' ) ) {
 					
 					if ( !empty( $show_byline ) ) {
 
-						$author_name = get_issuem_author_name( $article );
+						$author_name = get_issuem_author_name( $article, true );
 						
 						$byline = sprintf( __( 'By %s', 'issuem' ), apply_filters( 'issuem_author_name', $author_name, $article->ID ) );
 					
@@ -540,7 +540,7 @@ if ( !function_exists( 'do_issuem_featured_rotator' ) ) {
 						$byline = '';
 						
 					}
-					
+
 					$caption = '<span class="featured_slider_title">' . $title . '</span> <span  class="featured_slider_teaser">' . $teaser . '</span> <span class="featured_slider_byline">' . $byline . '</span>';
 					
 					$results .= '<li>';
@@ -555,17 +555,33 @@ if ( !function_exists( 'do_issuem_featured_rotator' ) ) {
 			$results .= '</ul>';  //slides
 			$results .= '</div>'; //flexslider
 			$results .= '</div>'; //issuem-featured-article-slideshowholder
+
+			if ( $issuem_settings['show_rotator_control'] ) {
+				$control = 'true';
+			} else {
+				$control = 'false';
+			}
+
+			if ( $issuem_settings['show_rotator_direction'] ) {
+				$direction = 'true';
+			} else {
+				$direction = 'false';
+			}
 					
 			$results .= "<script type='text/javascript'>
 						jQuery( window ).load( function(){
 						  jQuery( '.issuem-flexslider' ).issuem_flexslider({
-							animation: 'slide',
+							animation: '" . $issuem_settings['animation_type'] . "',
 							start: function(slider){
 							  jQuery('body').removeClass('loading');
 							},
-							controlNav: false,
-							directionNav: false
+							controlNav:" . $control . ",
+							directionNav: " . $direction . ",
 						  });
+						
+						var slideWidth = jQuery('.flex-viewport').outerWidth();
+						jQuery('.flex-caption').css('width', slideWidth );
+						  
 						});
 					  </script>";
 			
