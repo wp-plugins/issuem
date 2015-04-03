@@ -42,6 +42,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 			register_deactivation_hook( __FILE__, array( $this, 'deactivation' ) );
 			
 			add_filter( 'views_edit-article', array( $this, 'display_zeen101_dot_com_rss_item' ) );
+			add_filter('plugin_action_links_' . ISSUEM_BASENAME, array($this, 'issuem_settings_link') );
 
 			add_action( 'wp_ajax_issuem_process_notice_link', array( $this, 'ajax_process_notice_link' ) );
 
@@ -66,7 +67,8 @@ if ( ! class_exists( 'IssueM' ) ) {
 		 */
 		function activation() {
 			
-			 add_option( 'issuem_flush_rewrite_rules', 'true' );
+			create_article_post_type();
+			flush_rewrite_rules();
 			
 		}
 	
@@ -86,6 +88,8 @@ if ( ! class_exists( 'IssueM' ) ) {
 				wp_clear_scheduled_hook( 'zeen101_dot_com_rss_feed_check' );
 				
 			 delete_option( 'issuem_flush_rewrite_rules' );
+
+			 flush_rewrite_rules();
 			
 		}
 			
@@ -99,9 +103,23 @@ if ( ! class_exists( 'IssueM' ) ) {
 			add_submenu_page( 'edit.php?post_type=article', __( 'IssueM Settings', 'issuem' ), __( 'IssueM Settings', 'issuem' ), apply_filters( 'manage_issuem_settings', 'manage_issuem_settings' ), 'issuem', array( $this, 'settings_page' ) );
 		
 			add_submenu_page( 'edit.php?post_type=article', __( 'IssueM Help', 'issuem' ), __( 'IssueM Help', 'issuem' ), apply_filters( 'manage_issuem_settings', 'manage_issuem_settings' ), 'issuem-help', array( $this, 'help_page' ) );
+
+			add_submenu_page( 'edit.php?post_type=article', __( 'Add-Ons', 'issuem' ), __( 'Add-Ons', 'issuem' ), apply_filters( 'manage_issuem_settings', 'manage_issuem_settings' ), 'issuem-addons', array( $this, 'addons_page' ) );
 			
 			//add_submenu_page( 'edit.php?post_type=article', __( 'Advanced Styles', 'issuem' ), __( 'Advanced Styles', 'issuem' ), apply_filters( 'manage_issuem_settings', 'manage_issuem_settings' ), 'issuem-css', array( $this, 'css_page' ) );
 			
+		}
+
+		/**
+		 * Add settings link to plugin page
+		 *
+		 * @since 2.0.4
+		 */
+		function issuem_settings_link( $links ) {
+			$settings_link = '<a href="edit.php?post_type=article&page=issuem">Settings</a>'; 
+  			array_unshift($links, $settings_link); 
+  			return $links; 
+
 		}
 		
 		/**
@@ -231,7 +249,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 		
 			global $hook_suffix;
 			
-			if ( 'article_page_issuem' == $hook_suffix 
+			if ( 'article_page_issuem' == $hook_suffix || 'article_page_issuem-addons' == $hook_suffix
 				|| ( 'edit.php' == $hook_suffix && !empty( $_GET['post_type'] ) && 'article' == $_GET['post_type'] ) )
 				wp_enqueue_style( 'issuem_admin_style', ISSUEM_URL . '/css/issuem-admin.css', '', ISSUEM_VERSION );
 			
@@ -307,7 +325,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 		 * @since 1.0.0
 		 *
 		 * @return array IssueM settings, merged with defaults.
-\		 */
+		 */
 		function get_settings() {
 			
 			$defaults = array( 
@@ -323,6 +341,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 								'featured_thumb_width'	=> 160,
 								'featured_thumb_height'	=> 120,
 								'default_issue_image'	=> apply_filters( 'issuem_default_issue_image', ISSUEM_URL . '/images/archive-image-unavailable.jpg' ),
+								'show_thumbnail_byline' => '',
 								'custom_image_used'		=> 0,
 								'display_byline_as'		=> 'user_firstlast',
 								'issuem_author_name'	=> '',
@@ -355,7 +374,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 		 * @since 1.2.0
 		 *
 		 * @param array IssueM settings
-\		 */
+		 */
 		function update_settings( $settings ) {
 			
 
@@ -610,6 +629,9 @@ if ( ! class_exists( 'IssueM' ) ) {
                                 <?php _e( 'Width', 'issuem' ); ?> <input type="text" id="featured_thumb_width" class="small-text" name="featured_thumb_width" value="<?php echo htmlspecialchars( stripcslashes( $settings['featured_thumb_width'] ) ); ?>" />px &nbsp;&nbsp;&nbsp;&nbsp; <?php _e( 'Height', 'issuem' ); ?> <input type="text" id="featured_thumb_height" class="small-text" name="featured_thumb_height" value="<?php echo htmlspecialchars( stripcslashes( $settings['featured_thumb_height'] ) ); ?>" />px
                                 </td>
                             </tr>
+                            <tr>
+                            <td></td><td><p>After changing these image settings you may need to <a target="_blank" href="https://wordpress.org/plugins/regenerate-thumbnails/">regenerate your thumbnails</a>.</p></td>
+                            </tr>
                             
                         	<tr>
                                 <th rowspan="1"> <?php _e( 'Default Issue Image', 'issuem' ); ?></th>
@@ -621,9 +643,10 @@ if ( ! class_exists( 'IssueM' ) ) {
                                 
 
                                 	<p><img style="max-width: 400px;" src="<?php echo $settings['default_issue_image']; ?>" /></p>
-                                
-                                <?php if ( 0 < $settings['custom_image_used'] ) { ?>
-                                <p><a href="?<?php echo http_build_query( wp_parse_args( array( 'remove_default_issue_image' => 1 ), $_GET ) ) . '">' . __( 'Remove Custom Default Issue Image', 'issuem' ); ?></a></p>
+
+                                	
+                              	<?php if ( 0 < $settings['custom_image_used'] ) { ?>
+                                <p><a href="?<?php echo http_build_query( wp_parse_args( array( 'remove_default_issue_image' => 1 ), $_GET ) ); __( 'Remove Custom Default Issue Image', 'issuem' ); ?>"></a></p>
                                 <?php } ?>
                                 </td>
                             </tr>
@@ -631,7 +654,7 @@ if ( ! class_exists( 'IssueM' ) ) {
                         	<tr>
                                 <th rowspan="1"> <?php _e( 'Display Byline As', 'issuem' ); ?></th>
                                 <td>
-                                <select id="display_byline_as" name="display_byline_as" >
+                                <select id="display_byline_as" name="display_byline_as">
                                 	<option value="user_firstlast" <?php selected( 'user_firstlast' == $settings['display_byline_as'] ); ?>>First & Last Name</option>
                                 	<option value="user_firstname" <?php selected( 'user_firstname' == $settings['display_byline_as'] ); ?>>First Name</option>
                                 	<option value="user_lastname" <?php selected( 'user_lastname' == $settings['display_byline_as'] ); ?>>Last Name</option>
@@ -642,22 +665,22 @@ if ( ! class_exists( 'IssueM' ) ) {
 
                             <tr>
                                 <th rowspan="1"> <?php _e( 'Show Thumbnail Byline', 'issuem' ); ?></th>
-                                <td><input type="checkbox" id="show_thumbnail_byline" name="show_thumbnail_byline" <?php checked( $settings['show_thumbnail_byline'] || 'on' == $settings['show_thumbnail_byline'] ); ?>" /></td>
+                                <td><input type="checkbox" id="show_thumbnail_byline" name="show_thumbnail_byline" value="1" <?php checked( $settings['show_thumbnail_byline'], 1 ); ?> /></td>
                             </tr>
                         
                         	<tr>
                                 <th rowspan="1"> <?php _e( 'Name', 'issuem' ); ?></th>
-                                <td><input type="checkbox" id="issuem_author_name" name="issuem_author_name" <?php checked( $settings['issuem_author_name'] || 'on' == $settings['issuem_author_name'] ); ?>" /> <?php _e( 'Use IssueM Author Name instead of WordPress Author', 'issuem' ); ?></td>
+                                <td><input type="checkbox" id="issuem_author_name" name="issuem_author_name" value="1" <?php checked( $settings['issuem_author_name'], 1 ); ?> /> <?php _e( 'Use IssueM Author Name instead of WordPress Author', 'issuem' ); ?></td>
                             </tr>
                         
                         	<tr>
                                 <th rowspan="1"> <?php _e( 'Categories and Tags', 'issuem' ); ?></th>
-                                <td><input type="checkbox" id="use_wp_taxonomies" name="use_wp_taxonomies" <?php checked( $settings['use_wp_taxonomies'] || 'on' == $settings['use_wp_taxonomies'] ); ?>" /> <?php _e( 'Use Default WordPress Category and Tag Taxonomies', 'issuem' ); ?></td>
+                                <td><input type="checkbox" id="use_wp_taxonomies" name="use_wp_taxonomies" value="1" <?php checked( $settings['use_wp_taxonomies'], 1 ); ?> /> <?php _e( 'Use Default WordPress Category and Tag Taxonomies', 'issuem' ); ?></td>
                             </tr>
 
                             <tr>
                                 <th rowspan="1"> <?php _e( 'Links', 'issuem' ); ?></th>
-                                <td><input type="checkbox" id="use_issue_tax_links" name="use_issue_tax_links" <?php checked( $settings['use_issue_tax_links'] || 'on' == $settings['use_issue_tax_links'] ); ?> /> <?php _e( 'Use Taxonomical links instead of shortcode based links for Issues', 'issuem' ); ?></td>
+                                <td><input type="checkbox" id="use_issue_tax_links" name="use_issue_tax_links" value="1" <?php checked( $settings['use_issue_tax_links'], 1 ); ?> /> <?php _e( 'Use Taxonomical links instead of shortcode based links for Issues', 'issuem' ); ?></td>
                             </tr>
                             
                         </table>
@@ -681,12 +704,12 @@ if ( ! class_exists( 'IssueM' ) ) {
 
 						    <tr>
                                 <th rowspan="1"> <?php _e( 'Pagination Navigation', 'issuem' ); ?></th>
-                                <td><input type="checkbox" id="show_rotator_control" name="show_rotator_control" <?php checked( $settings['show_rotator_control'] || 'on' == $settings['show_rotator_control'] ); ?>" /> Display pagination below the slider</td>
+                                <td><input type="checkbox" id="show_rotator_control" name="show_rotator_control" value="1" <?php checked( $settings['show_rotator_control'], 1 ); ?> /> Display pagination below the slider</td>
                             </tr>
 
                             <tr>
                                 <th rowspan="1"> <?php _e( 'Direction Navigation', 'issuem' ); ?></th>
-                                <td><input type="checkbox" id="show_rotator_direction" name="show_rotator_direction" <?php checked( $settings['show_rotator_direction'] || 'on' == $settings['show_rotator_direction'] ); ?>" />Display previous/next navigation arrows</td>
+                                <td><input type="checkbox" id="show_rotator_direction" name="show_rotator_direction" value="1" <?php checked( $settings['show_rotator_direction'], 1); ?> />Display previous/next navigation arrows</td>
                             </tr>
 
                             <tr>
@@ -720,7 +743,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 	                        <p>This controls the article output of the [issuem_articles] shortcode on the Current Issue page.</p>
 	                        
 	                        <textarea id="article_format" class="code" cols="75" rows="8" name="article_format"><?php echo htmlspecialchars( stripcslashes( $settings['article_format'] ) ); ?></textarea>
-	                        
+	                        <p>Available template tags:<br> %CATEGORY%, %TAG%, %TEASER%, %EXCERPT%, %CONTENT%, %FEATURE_IMAGE%, %ISSUEM_FEATURE_THUMB%, %BYLINE%, and %DATE%</p>
 	                                                  
 	                        <p class="submit">
 	                            <input class="button-primary" type="submit" name="update_issuem_settings" value="<?php _e( 'Save Settings', 'issuem' ) ?>" />
@@ -752,7 +775,7 @@ if ( ! class_exists( 'IssueM' ) ) {
 	                        <div class="inside">
 	                        	<p>Need help setting up your magazine? Please read our <a target="_blank" href="http://zeen101.com/documentation/getting-started/">Getting Started</a> guide.</p>
 
-	                        	<p>Still have questions? <a target="_blank" href="http://zeen101.com/forums/">Start a support topic</a> in our support forums.</p>
+	                        	<p>Still have questions? <a target="_blank" href="https://zeen101.com/get-help/">Submit a support ticket.</a></p>
 
 	                        </div>
 
@@ -1081,6 +1104,98 @@ if ( ! class_exists( 'IssueM' ) ) {
             </div>
             </div>
 			</div>
+			<?php
+			
+		}
+
+
+		/**
+		 * Outputs the IssueM Add Ons page
+		 *
+		 * @since 2.0.4
+		 */
+		function addons_page() {
+			
+			// Display HTML
+			?>
+			<div class="wrap">
+        
+                <h2 style='margin-bottom: 10px;' ><?php _e( 'IssueM Add-Ons', 'issuem' ); ?></h2>
+                <p><?php _e( 'The following are available add-ons to extend IssueM functionality.', 'issuem' ); ?></p>
+
+                <table id="issuem-addons" cellpadding="0" cellspacing="0">
+                	<tbody>
+	                    <tr>
+
+	                    	 <td class="available-addon">
+	                        	<div class="available-addon-inner">
+									<img src="https://zeen101.com/wp-content/uploads/2015/03/leaky.jpg" alt="Leaky Paywall">
+									<h3>Leaky Paywall</h3>
+									<a class="button" target="_blank" href="https://zeen101.com/leakypaywall/?ref=issuem_addons">Purchase</a>
+									<p>The #1 metered paywall solution for WordPress.</p>
+	                            </div>
+	                        </td>
+
+	                        <td class="available-addon">
+	                        	<div class="available-addon-inner">
+									<img src="https://zeen101.com/wp-content/uploads/2015/03/unipress.jpg" alt="UniPress">
+									<h3>UniPress</h3>
+									<a class="button" target="_blank" href="https://zeen101.com/unipress/?ref=issuem_addons">Purchase</a>
+									<p>UniPress is the first WordPress-to-App publishing framework. It is now simple, quick, and affordable to offer your publication as an app.</p>
+	                            </div>
+	                        </td>
+	                    
+	                       <td class="available-addon">
+	                        	<div class="available-addon-inner">
+									<img src="https://zeen101.com/wp-content/uploads/2015/03/addrop.jpg" alt="Ad Dropper">
+									<h3>Ad Dropper</h3>
+									<a class="button" target="_blank" href="https://zeen101.com/downloads/ad-dropper/?ref=issuem_addons">Purchase</a>
+									<p>Manage and track your ads easily and seamlessly.</p>
+	                            </div>
+	                        </td>
+	                        
+	                    </tr>
+
+	                    <tr>
+
+	                    	<td class="available-addon">
+	                        	<div class="available-addon-inner">
+									<img src="https://zeen101.com/wp-content/uploads/2015/03/pdf.jpg" alt="Issue to PDF">
+									<h3>Issue-to-PDF</h3>
+									<a class="button" target="_blank" href="https://zeen101.com/downloads/issue-to-pdf/?ref=issuem_addons">Purchase</a>
+									<p>The Issue-to-PDF plugin turns any issue created with the IssueM plugin into a PDF, ready to print.</p>
+	                            </div>
+	                        </td>
+
+	                        <td class="available-addon">
+	                        	<div class="available-addon-inner">
+									<img src="https://zeen101.com/wp-content/uploads/2015/03/migrate.jpg" alt="Post to Issue Migration">
+									<h3>Post to Issue Migration</h3>
+									<a class="button" target="_blank" href="https://zeen101.com/downloads/migration-tool/?ref=issuem_addons">Purchase</a>
+									<p>Need to migrate your posts into IssueM issues? Migrate posts, pages, and other post types into your selected issue.</p>
+	                            </div>
+	                        </td>
+
+	                    	 <td class="available-addon">
+	                        	<div class="available-addon-inner">
+									<img src="https://zeen101.com/wp-content/uploads/2015/03/search.jpg" alt="Advanced Issue Search">
+									<h3>Advanced Issue Search</h3>
+									<a class="button" target="_blank" href="https://zeen101.com/downloads/issuem-advanced-search/?ref=issuem_addons">Purchase</a>
+									<p>Give your readers a more powerful way to find your articles. One shortcode will allow readers to search by Issue, Article Category, or Keyword.</p>
+	                            </div>
+	                        </td>
+
+	                    	
+	                   
+
+	                        
+	                        
+	                    </tr>
+                    </tbody>
+                </table>
+             
+            </div>
+
 			<?php
 			
 		}
